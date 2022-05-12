@@ -15,12 +15,15 @@
  * Returned channel selected 1
  *         Counter returned: 23
  * 
- *  
+ *  See this helpful article:
+ *  https://medium.com/codex/how-to-create-your-own-arduino-library-540f833a49cf
  */
 
 #include <Arduino.h>
 #include <Wire.h>
 #include "DS248X.h"
+
+typedef uint8_t DeviceAddress[8];
 
 #define CONVERT_TEMPERATURE_COMMAND       0x44
 #define READ_SCRATCHPAD_COMMAND           0xBE
@@ -28,15 +31,20 @@
 #define TEMPERATURE_CONVERSION_DELAY      750
 #define DELAY_ADD                         0
 
-DS248X owMaster;
+
 void printAddress(uint8_t[]);
 void printArrayInHex(uint8_t[], int len);
 uint8_t getCRC8( uint8_t *addr, uint8_t len);
 uint16_t getCRC16( uint8_t *data, uint8_t len);
 void readCounter(uint8_t *addr);
 bool readTemperatureDevice(uint8_t *addr);
+void do_verify();
+void do_family_target(uint8_t familyID);
 
-uint8_t currentAddress[8];
+uint8_t device_query[] = { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 };
+
+DeviceAddress currentAddress;
+DS248X owMaster;
 
 char buffer[256];
 char temp_str[80];
@@ -45,11 +53,14 @@ void setup()
 {
   Serial.begin(9600);
   
+  Wire.begin();
+
   owMaster.DS2482Reset();
   owMaster.writeConfig(0x01);
   owMaster.selectChannel(0);   
-
   delay(2000);
+  Serial.println();
+  Serial.println("DS248X 1-wire library by SeattleBiker: a Demo");
 }
 
 void loop()
@@ -57,16 +68,21 @@ void loop()
   uint8_t crc8;
 
   Serial.println("\nChecking for I2C devices...:");
-  if (owMaster.checkPresence())
+  if (owMaster.isConnected())
   {
     Serial.println("DS2482-100/800 present");  
        
     Serial.println("\tChecking for 1-Wire devices...");
     if (owMaster.OWReset())
     {
-      Serial.println("\tDevices present on 1-Wire bus");            
-      Serial.println("\tSearching 1-Wire bus...");      
-      while (owMaster.OWSearch(currentAddress)) {
+      Serial.println("\tThere are devices present on 1-Wire bus");            
+      
+      do_verify();
+      do_family_target(0x10);
+
+      Serial.println("\n\tSearching 1-Wire bus with OWSearch()...");    
+      while (owMaster.OWSearch(currentAddress, true)) 
+      {       
         Serial.print("\tFound device: ");
         printAddress(currentAddress);
         Serial.println();
@@ -89,10 +105,12 @@ void loop()
           }            
         }          
       }      
-      owMaster.OWResetSearch();      
+      owMaster.OWResetSearch();  
     }
+    
     else
-      Serial.println("\tNo devices on 1-Wire bus");
+      Serial.println("\n\tNo devices on 1-Wire bus");
+ 
   }
   else
     Serial.println("No DS2482 present");
@@ -100,6 +118,37 @@ void loop()
   delay(5000);
 }
 
+
+void do_verify() {
+  Serial.print("\tSearching for ");
+  printArrayInHex(device_query, 8);
+  Serial.println(" using OWVerify()");
+  if (owMaster.OWVerify(device_query)) 
+  {
+        Serial.println("\t\tFound 1-wire counter using OWVerify()");
+  }
+  else 
+  {
+        Serial.println("\t\tDid not find that device");
+  }
+  owMaster.OWResetSearch();
+}
+
+void do_family_target(uint8_t fam) {
+  Serial.print("\n\tSearching for family ");
+  Serial.println(fam, HEX);
+
+  owMaster.OWTargetSearch(fam);  
+  if (owMaster.OWSearch(currentAddress, 1)) 
+  {
+    Serial.print("\t\tFound device ");
+    printAddress(currentAddress);
+    Serial.println(" using OWTargetSearch()");
+  } else {
+    Serial.println("\t\tDid not find a device family on the Microlan");
+  } 
+  owMaster.OWResetSearch();      
+}
 
 void readCounter(uint8_t *addr) {
     uint32_t count = 0;
@@ -140,9 +189,15 @@ void readCounter(uint8_t *addr) {
     
     int error = 0;
     error = (crcLo != crcBytes[0]) || (crcHi != crcBytes[1]);
-    Serial.print("\tDS2423 returned: ");
-    Serial.println(count);     
+    if (error) {
+       Serial.print("Error: ");
+       Serial.println(error);
+    } else {
+      Serial.print("\tDS2423 returned: ");
+      Serial.println(count);     
+    }
 }
+    
 
 
 bool readTemperatureDevice(uint8_t *addr) {   
@@ -229,18 +284,38 @@ void printAddress(uint8_t *deviceAddress)
 }
 
 
-void printArrayInHex (uint8_t array[], int len)
-{
-  Serial.print("{ ");
-  for (uint8_t i = 0; i < len; i++)
-  {
-    // zero pad the address if necessary
-    Serial.print("0x");
-    if (array[i] < 16) Serial.print("0");
-    Serial.print(array[i], HEX);
-    if ( !(i % 8) ) Serial.print("");
-    if (i < len - 1) Serial.print(", ");    
-  }
-  Serial.print(" }");
-}
+//void printArrayInHex (uint8_t array[], int len)
+//{
+//  Serial.print("{ ");
+//  for (uint8_t i = 0; i < len; i++)
+//  {
+//    // zero pad the address if necessary
+//    Serial.print("0x");
+//    if (array[i] < 16) Serial.print("0");
+//    Serial.print(array[i], HEX);
+//    if ( !(i % 8) ) Serial.print("");
+//    if (i < len - 1) Serial.print(", ");    
+//  }
+//  Serial.print(" }");
+//}
 
+// See https://forum.arduino.cc/t/reading-1wire-addresses-into-an-object-array-noob/503371
+/*
+void storeROM_ID(uint8_t fam, uint8_t *addr) {
+  DeviceAddress addr;
+  typedef struct {
+    DeviceAddress addr;
+    char name[8];
+    char location[16];
+    int state;
+    uint8_t family;
+} OWSensor;
+
+
+  while (owMaster.OWSearch(addr)) {
+    Serial.print("Found device: ");
+    printAddress(addr);
+  }
+  Serial.println("Stored device address");
+}
+*/
