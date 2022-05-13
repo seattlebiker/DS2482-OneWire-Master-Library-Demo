@@ -284,21 +284,6 @@ void printAddress(uint8_t *deviceAddress)
 }
 
 
-//void printArrayInHex (uint8_t array[], int len)
-//{
-//  Serial.print("{ ");
-//  for (uint8_t i = 0; i < len; i++)
-//  {
-//    // zero pad the address if necessary
-//    Serial.print("0x");
-//    if (array[i] < 16) Serial.print("0");
-//    Serial.print(array[i], HEX);
-//    if ( !(i % 8) ) Serial.print("");
-//    if (i < len - 1) Serial.print(", ");    
-//  }
-//  Serial.print(" }");
-//}
-
 // See https://forum.arduino.cc/t/reading-1wire-addresses-into-an-object-array-noob/503371
 /*
 void storeROM_ID(uint8_t fam, uint8_t *addr) {
