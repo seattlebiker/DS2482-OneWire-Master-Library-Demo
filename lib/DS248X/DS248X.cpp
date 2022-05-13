@@ -1,6 +1,6 @@
 /******************************************************************* 
- * Arduino/Espressif library for interfacing DS2482-100, DS2482-800, 
- * and DS2484 I2C-to-1-wire masters.
+ * A library for interfacing an ESP8266 to DS2482-100, DS2482-800, 
+ * and DS2484 I2C-to-1-wire masters. (should work also for Arduino's)
  * 
  * This library is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@
  * Cybergibbons' library, is cool, but it's based on Paeae's library which
  * has the same issue as follows:
  * 
- * I nad to fix the 1-wire search function because it failed to find other devices 
+ * I had to fix the 1-wire search function because it failed to find other devices 
  * on the MicroLan if a device with bit 64 in the ROM was a '1' was also on the bus.
  * I don't take credit for that search fix, but it's in my version. Here's a couple
  * links; User "Garitron" on the Arduino forum found the fix for the 1-wire search 
