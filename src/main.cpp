@@ -4,8 +4,8 @@
  * DS248X 1-wire library by SeattleBiker: a Demo
  * DS2482-100/800 present
  *
- * Checking for I2C devices...:
- *       Checking for 1-Wire devices...
+ *      Checking for I2C devices...:
+ *      Checking for 1-Wire devices...
  *      There are devices present on 1-Wire bus
  *      Searching for { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 } using OWVerify()
  *               Found { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
@@ -28,6 +28,42 @@
  *       Calculated CRC of device serial is 70
  *       Found 1-wire counter at { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
  *       DS2423 returned: 69
+ *
+ * Test of demo with DS2482-800 and existing 1-wire devices:
+ * 
+ *  Checking for I2C devices...:
+ *  DS2482-100/800 present
+ *  Checking for 1-Wire devices...
+ *        There are devices present on 1-Wire bus
+ *
+ *        Searching 1-Wire bus with OWSearch() in NORMAL_MODE...
+ *        Found device: { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 }
+ *        Calculated CRC of device serial is F2
+ *        This device is a 1-wire thermometer
+ *        No temperature error. Temperature = 20.1C or 68.1F
+ *        Found device: { 0x12, 0x05, 0x1C, 0x22, 0x00, 0x00, 0x00, 0x40 }
+ *        Calculated CRC of device serial is 40
+ *        Found device: { 0x1D, 0x97, 0x87, 0x01, 0x00, 0x00, 0x00, 0xE2 }
+ *        Calculated CRC of device serial is E2
+ *        Found 1-wire counter at { 0x1D, 0x97, 0x87, 0x01, 0x00, 0x00, 0x00, 0xE2 }
+ *        DS2423 returned: 1549
+ *
+ *  Checking for I2C devices...:
+ *  DS2482-100/800 present
+ *  Checking for 1-Wire devices...
+ *        There are devices present on 1-Wire bus
+ *
+ *        Searching 1-Wire bus with OWSearch() in NORMAL_MODE...
+ *        Found device: { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 }
+ *        Calculated CRC of device serial is F2
+ *        This device is a 1-wire thermometer
+ *        No temperature error. Temperature = 20.1C or 68.1F
+ *        Found device: { 0x12, 0x05, 0x1C, 0x22, 0x00, 0x00, 0x00, 0x40 }
+ *        Calculated CRC of device serial is 40
+ *        Found device: { 0x1D, 0x97, 0x87, 0x01, 0x00, 0x00, 0x00, 0xE2 }
+ *        Calculated CRC of device serial is E2
+ *        Found 1-wire counter at { 0x1D, 0x97, 0x87, 0x01, 0x00, 0x00, 0x00, 0xE2 }
+ *        DS2423 returned: 1549
  *
  */
 
@@ -53,6 +89,13 @@ bool readTemperatureDevice(uint8_t *addr);
 void do_verify();
 void do_family_target(uint8_t familyID);
 
+void MAINprintBinary(uint8_t byteValue) {
+  for (int i = 7; i >= 0; i--) {
+    Serial.print((byteValue >> i) & 0x01); // Shift and mask to get each bit
+  }
+  Serial.println(); // Move to the next line after printing the byte
+}
+
 uint8_t device_query[] = { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 };
 
 DeviceAddress currentAddress;
@@ -64,13 +107,12 @@ char temp_str[80];
 void setup()
 {
   Serial.begin(9600);
-  
+  delay(500);
   Wire.begin();
-
-  delay(2000);
   Serial.println();
   Serial.println("DS248X 1-wire library by SeattleBiker: a Demo");
 
+  delay(500);
   if (owMaster.isConnected())
   {
     Serial.println("DS2482-100/800 present");  
@@ -80,29 +122,27 @@ void setup()
   }
   else
     Serial.println("No DS2482 present");
-  
 }
 
 void loop()
-{        
+{    
   uint8_t crc8;
   uint16_t count;
 
   Serial.println("\nChecking for I2C devices...:");
-  //if (owMaster.isConnected())
-  //{
-    //Serial.println("DS2482-100/800 present");  
-       
-    Serial.println("\tChecking for 1-Wire devices...");
-    if (owMaster.OWReset())
+  if (owMaster.isConnected()) 
+  {
+    Serial.println("DS2482-100/800 present");  
+    delay(250);
+    Serial.println("Checking for 1-Wire devices...");
+    if (owMaster.OWReset() && owMaster.getError() != DS248X_ERROR_SHORT)
     {
       Serial.println("\tThere are devices present on 1-Wire bus");            
-      
-      do_verify();
-      do_family_target(0x10);
+      //do_verify();
+      //do_family_target(0x10);
 
-      Serial.println("\n\tSearching 1-Wire bus with OWSearch()...");    
-      while (owMaster.OWSearch(currentAddress, true)) 
+      Serial.println("\n\tSearching 1-Wire bus with OWSearch() in NORMAL_MODE...");    
+      while (owMaster.OWSearch(currentAddress, NORMAL_MODE))   // Non-alarm search mode
       {       
         Serial.print("\tFound device: ");
         printAddress(currentAddress);
@@ -135,11 +175,16 @@ void loop()
       }      
       owMaster.OWResetSearch();  
     }
-    else
-      Serial.println("\n\tNo devices on 1-Wire bus");
- 
-  
-
+    else {
+      if (owMaster.getError() == DS248X_ERROR_SHORT) {
+        Serial.println("\tShort detected on 1-Wire microLAN...search aborted "); 
+      } else {
+        Serial.println("\n\tNo devices on 1-Wire bus");
+      }
+    }
+  } else {
+     Serial.println("\n\tNo 1-wire master found");
+  }
   delay(5000);
 }
 
@@ -164,7 +209,7 @@ void do_family_target(uint8_t fam) {
   Serial.println(fam, HEX);
 
   owMaster.OWTargetSearch(fam);  
-  if (owMaster.OWSearch(currentAddress, 1)) 
+  if (owMaster.OWSearch(currentAddress, NORMAL_MODE)) 
   {
     Serial.print("\t\tFound device ");
     printAddress(currentAddress);
@@ -291,7 +336,7 @@ bool readTemperatureDevice(uint8_t *addr) {
   } else 
     if (addr[0] == 0x26) {
       Serial.println("\tThis device is a DS2438 ADC/thermometer");
-      Serial.println("\tNo code here yet"); 
+      Serial.println("\tNo code for this device as yet"); 
     }  
   return true;
 }

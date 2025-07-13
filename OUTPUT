@@ -1,0 +1,39 @@
+Checking for I2C devices...:
+        Checking for 1-Wire devices...
+        There are devices present on 1-Wire bus
+        Searching for { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 } using OWVerify()
+                Found { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+                Found 1-wire counter using OWVerify()
+
+        Searching for family 10
+                Found device { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 } using OWTargetSearch()
+
+        Searching 1-Wire bus with OWSearch()...
+        Found device: { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 }
+        Calculated CRC of device serial is F2
+        This device is a 1-wire thermometer
+        No temperature error. Temperature = 20.6C or 69.0F
+        Found device: { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+        Calculated CRC of device serial is 70
+        Found 1-wire counter at { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+        DS2423 returned: 1
+
+Checking for I2C devices...:
+        Checking for 1-Wire devices...
+        There are devices present on 1-Wire bus
+        Searching for { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 } using OWVerify()
+                Found { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+                Found 1-wire counter using OWVerify()
+
+        Searching for family 10
+                Found device { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 } using OWTargetSearch()
+
+        Searching 1-Wire bus with OWSearch()...
+        Found device: { 0x10, 0x67, 0xBB, 0xE0, 0x02, 0x08, 0x00, 0xF2 }
+        Calculated CRC of device serial is F2
+        This device is a 1-wire thermometer
+        No temperature error. Temperature = 20.6C or 69.0F
+        Found device: { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+        Calculated CRC of device serial is 70
+        Found 1-wire counter at { 0x1D, 0xB8, 0x87, 0x01, 0x00, 0x00, 0x00, 0x70 }
+        DS2423 returned: 1
